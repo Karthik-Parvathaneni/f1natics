@@ -10,18 +10,23 @@ const Drivers = () => {
   useEffect(() => {
     const fetchDrivers = async () => {
       try {
-        const ergastResponse = await axios.get(`https://ergast.com/api/f1/${year}/drivers.json`);
-        const driverData = ergastResponse.data.MRData.DriverTable.Drivers;
+        const ergastResponse = await axios.get(`https://ergast.com/api/f1/${year}/driverStandings.json`);
+        const driverData = ergastResponse.data.MRData.StandingsTable.StandingsLists[0].DriverStandings;
 
-        // Map drivers with Formula 1 photo URLs
-        const driversWithPhotos = driverData.map((driver) => {
+        const driversWithDetails = driverData.map((standing) => {
+          const { Driver: driver, Constructors: [team] } = standing;
           const lastName = driver.familyName.toLowerCase();
           const photoUrl = `https://media.formula1.com/image/upload/f_auto,c_limit,q_75,w_1320/content/dam/fom-website/drivers/${year}Drivers/${lastName}`;
-
-          return { ...driver, photo: photoUrl };
+          
+          return {
+            ...driver,
+            photo: photoUrl,
+            teamName: team.name,
+            points: standing.points,
+          };
         });
 
-        setDrivers(driversWithPhotos);
+        setDrivers(driversWithDetails);
       } catch (err) {
         console.error("Failed to fetch drivers:", err);
       }
@@ -43,7 +48,7 @@ const Drivers = () => {
       <h1 className="text-3xl font-bold text-center text-indigo-800 mb-4">
         Formula 1 {year} - Drivers
       </h1>
-      
+
       <div className="flex justify-center mb-6">
         <label className="text-lg font-medium text-gray-700">
           Year:
@@ -67,6 +72,8 @@ const Drivers = () => {
               <th className="p-4 text-left font-semibold">Date of Birth</th>
               <th className="p-4 text-left font-semibold">Code</th>
               <th className="p-4 text-left font-semibold">Number</th>
+              <th className="p-4 text-left font-semibold">Team</th>
+              <th className="p-4 text-left font-semibold">Points</th>
             </tr>
           </thead>
           <tbody>
@@ -83,11 +90,13 @@ const Drivers = () => {
                     className="w-10 h-10 rounded-full cursor-pointer"
                   />
                 </td>
-                <td className="p-4 border-b">{driver.givenName} {driver.familyName}</td>
+                <td className="p-4 border-b cursor-pointer">{driver.givenName} {driver.familyName}</td>
                 <td className="p-4 border-b">{driver.nationality}</td>
                 <td className="p-4 border-b">{driver.dateOfBirth}</td>
                 <td className="p-4 border-b">{driver.code}</td>
                 <td className="p-4 border-b">{driver.permanentNumber || "N/A"}</td>
+                <td className="p-4 border-b">{driver.teamName}</td>
+                <td className="p-4 border-b">{driver.points}</td>
               </tr>
             ))}
           </tbody>
