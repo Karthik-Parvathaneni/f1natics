@@ -12,11 +12,17 @@ const Constructors = () => {
         const ergastResponse = await axios.get(`https://ergast.com/api/f1/${year}/constructors.json`);
         const constructorData = ergastResponse.data.MRData.ConstructorTable.Constructors;
 
-        const constructorsWithImages = constructorData.map((constructor) => {
+        // Fetch constructor standings to get points
+        const standingsResponse = await axios.get(`https://ergast.com/api/f1/${year}/constructorStandings.json`);
+        const standingsData = standingsResponse.data.MRData.StandingsTable.StandingsLists[0]?.ConstructorStandings || [];
+
+        // Map constructor points to the respective constructor in the list
+        const constructorsWithDetails = constructorData.map((constructor) => {
           let teamName = constructor.name.toLowerCase().replace(/\s+/g, "-");
           let logoUrl = `https://media.formula1.com/image/upload/f_auto,c_limit,q_75,w_1320/content/dam/fom-website/2018-redesign-assets/team%20logos/${teamName}`;
           let carImageUrl = `https://media.formula1.com/image/upload/f_auto,c_limit,q_75,w_1320/content/dam/fom-website/teams/${year}/${teamName}.png`;
         
+          // Specific logo and image URL adjustments for certain teams
           if (teamName === "red-bull") {
             logoUrl = "https://media.formula1.com/image/upload/f_auto,c_limit,q_75,w_1320/content/dam/fom-website/2018-redesign-assets/team%20logos/red%20bull";
             carImageUrl = "https://media.formula1.com/d_team_car_fallback_image.png/content/dam/fom-website/teams/2024/red-bull-racing.png";
@@ -45,10 +51,13 @@ const Constructors = () => {
             logoUrl = "https://media.formula1.com/image/upload/f_auto,c_limit,q_75,w_1320/content/dam/fom-website/2018-redesign-assets/team%20logos/haas";
           }
 
-          return { ...constructor, logo: logoUrl, carImage: carImageUrl };
+          // Find points for the constructor from standings data
+          const points = standingsData.find((standing) => standing.Constructor.constructorId === constructor.constructorId)?.points || "N/A";
+
+          return { ...constructor, logo: logoUrl, carImage: carImageUrl, points };
         });
 
-        setConstructors(constructorsWithImages);
+        setConstructors(constructorsWithDetails);
       } catch (err) {
         console.error("Failed to fetch constructors:", err);
       }
@@ -59,25 +68,20 @@ const Constructors = () => {
 
   const handleConstructorClick = async (constructor) => {
     try {
-        const driversResponse = await axios.get(`https://ergast.com/api/f1/${year}/constructors/${constructor.constructorId}/drivers.json`);
-        const driversData = driversResponse.data.MRData.DriverTable.Drivers;
+      const driversResponse = await axios.get(`https://ergast.com/api/f1/${year}/constructors/${constructor.constructorId}/drivers.json`);
+      const driversData = driversResponse.data.MRData.DriverTable.Drivers;
 
-        const driversWithPhotos = driversData.map((driver) => {
-            const lastName = driver.familyName.toLowerCase();
-            const photoUrl = `https://media.formula1.com/image/upload/f_auto,c_limit,q_75,w_1320/content/dam/fom-website/drivers/${year}Drivers/${lastName}`;
-            return { ...driver, photo: photoUrl };
-        });
+      const driversWithPhotos = driversData.map((driver) => {
+        const lastName = driver.familyName.toLowerCase();
+        const photoUrl = `https://media.formula1.com/image/upload/f_auto,c_limit,q_75,w_1320/content/dam/fom-website/drivers/${year}Drivers/${lastName}`;
+        return { ...driver, photo: photoUrl };
+      });
 
-        const standingsResponse = await axios.get(`https://ergast.com/api/f1/{year}/constructorStandings.json`);
-        
-        const points = standingsResponse.data.MRData.StandingsTable.Standings[0]?.points || "N/A";
-
-        setSelectedConstructor({ ...constructor, drivers: driversWithPhotos, points });
+      setSelectedConstructor({ ...constructor, drivers: driversWithPhotos });
     } catch (err) {
-        console.error("Failed to fetch drivers for constructor:", err);
+      console.error("Failed to fetch drivers for constructor:", err);
     }
   };
-
 
   const closeModal = () => {
     setSelectedConstructor(null);
@@ -88,7 +92,7 @@ const Constructors = () => {
       <h1 className="text-3xl font-bold text-center text-indigo-800 mb-6">
         Formula 1 {year} - Constructors
       </h1>
-      
+
       <div className="flex justify-center mb-8">
         <label className="text-lg font-medium text-gray-700">
           Year:
@@ -136,7 +140,7 @@ const Constructors = () => {
                   />
                 </td>
                 <td className="p-5 border-b text-center">{constructor.nationality}</td>
-                <td className="p-5 border-b text-center">{constructor.points || "N/A"}</td>
+                <td className="p-5 border-b text-center">{constructor.points}</td>
               </tr>
             ))}
           </tbody>
@@ -152,7 +156,7 @@ const Constructors = () => {
             >
               &times;
             </button>
-            
+
             <div className="text-center mb-4">
               <img src={selectedConstructor.logo} alt={`${selectedConstructor.name} logo`} className="w-24 h-24 mx-auto mb-4" />
               <h2 className="text-2xl font-bold mb-2">{selectedConstructor.name}</h2>
