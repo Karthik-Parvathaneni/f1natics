@@ -10,7 +10,7 @@ const Calendar = () => {
   useEffect(() => {
     const fetchRaceCalendar = async () => {
       try {
-        const ergastResponse = await axios.get("http://ergast.com/api/f1/current.json");
+        const ergastResponse = await axios.get("https://ergast.com/api/f1/current.json");
         const raceData = ergastResponse.data.MRData.RaceTable.Races;
 
         const formattedRaces = raceData.map((race) => ({
