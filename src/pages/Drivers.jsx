@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import DriverModal from "../components/DriverModal";
+import RaceStatsModal from "../components/RaceStatsModal";
 
 const Drivers = () => {
   const [year, setYear] = useState(new Date().getFullYear());
   const [drivers, setDrivers] = useState([]);
   const [selectedDriver, setSelectedDriver] = useState(null);
+  const [card, setCard] = useState(null);
+  const [raceData, setRaceData] = useState([]); // State to store race data for the driver
 
   useEffect(() => {
     const fetchDrivers = async () => {
@@ -35,12 +38,32 @@ const Drivers = () => {
     fetchDrivers();
   }, [year]);
 
-  const handleDriverClick = (driver) => {
+  const handleDriverClick = (driver, model) => {
     setSelectedDriver(driver);
+    setCard(model);
+    if (model === "statistics") {
+      fetchRaceData(driver.driverId); // Fetch race data when "View Race Stats" is clicked
+    }
+  };
+
+  const fetchRaceData = async (driverId) => {
+    try {
+      const response = await axios.get(`https://ergast.com/api/f1/${year}/drivers/${driverId}/results.json`);
+      const races = response.data.MRData.RaceTable.Races;
+      const racePositions = races.map((race) => ({
+        raceName: race.raceName,
+        position: race.Results[0]?.position || "N/A",
+      }));
+      setRaceData(racePositions);
+    } catch (err) {
+      console.error("Failed to fetch race data:", err);
+    }
   };
 
   const closeModal = () => {
     setSelectedDriver(null);
+    setCard(null);
+    setRaceData([]); // Clear race data when modal is closed
   };
 
   return (
@@ -74,6 +97,7 @@ const Drivers = () => {
               <th className="p-4 text-left font-semibold">Number</th>
               <th className="p-4 text-left font-semibold">Team</th>
               <th className="p-4 text-left font-semibold">Points</th>
+              <th className="p-4 text-left font-semibold">Statistics</th>
             </tr>
           </thead>
           <tbody>
@@ -81,29 +105,46 @@ const Drivers = () => {
               <tr
                 key={index}
                 className={`${index % 2 === 0 ? "bg-gray-50" : "bg-white"} hover:bg-indigo-100`}
-                onClick={() => handleDriverClick(driver)}
               >
                 <td className="p-4 border-b">
                   <img
                     src={driver.photo}
                     alt={`${driver.givenName} ${driver.familyName}`}
                     className="w-10 h-10 rounded-full cursor-pointer"
+                    onClick={() => handleDriverClick(driver, "model")}
                   />
                 </td>
-                <td className="p-4 border-b cursor-pointer">{driver.givenName} {driver.familyName}</td>
+                <td className="p-4 border-b cursor-pointer">
+                  <button onClick={() => handleDriverClick(driver, "model")}>
+                    {driver.givenName} {driver.familyName}
+                  </button>
+                </td>
                 <td className="p-4 border-b">{driver.nationality}</td>
                 <td className="p-4 border-b">{driver.dateOfBirth}</td>
                 <td className="p-4 border-b">{driver.code}</td>
                 <td className="p-4 border-b">{driver.permanentNumber || "N/A"}</td>
                 <td className="p-4 border-b">{driver.teamName}</td>
                 <td className="p-4 border-b">{driver.points}</td>
+                <td className="p-4 border-b">
+                  <button
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                    onClick={() => handleDriverClick(driver, "statistics")}
+                  >
+                    View Race Stats
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {selectedDriver && <DriverModal driver={selectedDriver} onClose={closeModal} />}
+      {selectedDriver && card === "model" && (
+        <DriverModal driver={selectedDriver} onClose={closeModal} />
+      )}
+      {selectedDriver && card === "statistics" && raceData.length > 0 && (
+        <RaceStatsModal raceData={raceData} onClose={closeModal} />
+      )}
     </div>
   );
 };
