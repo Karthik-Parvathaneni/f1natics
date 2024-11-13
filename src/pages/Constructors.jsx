@@ -116,6 +116,7 @@ const Constructors = () => {
 
 
   const closeModal = () => {
+    setComp(null);
     setSelectedConstructor(null);
   };
 
@@ -186,7 +187,7 @@ const Constructors = () => {
         </table>
       </div>
 
-      {selectedConstructor && (comp !=="statistics") &&<ConstructorModal constructor={selectedConstructor} onClose={closeModal}/>}
+      {selectedConstructor && (comp !="statistics") &&<ConstructorModal constructor={selectedConstructor} onClose={closeModal}/>}
       {selectedConstructor && (comp ==="statistics") &&<RaceStatsModal raceData={raceData} onClose={closeModal} />}
     </div>
   );
