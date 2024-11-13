@@ -1,10 +1,14 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import ConstructorModal from "../components/COnstructorModal";
+import RaceStatsModal from "../components/RaceStatsModal";
 
 const Constructors = () => {
   const [year, setYear] = useState(new Date().getFullYear());
   const [constructors, setConstructors] = useState([]);
   const [selectedConstructor, setSelectedConstructor] = useState(null);
+  const [raceData, setRaceData] = useState([]);
+  const [comp, setComp] = useState("");
 
   useEffect(() => {
     const fetchConstructors = async () => {
@@ -89,6 +93,28 @@ const Constructors = () => {
     }
   };
 
+  const handleDriverClick = (driver, model) => {
+    setComp(model);
+    setSelectedConstructor(driver);
+    fetchRaceData(driver.constructorId); // Fetch race data when "View Race Stats" is clicked
+  };
+
+
+  const fetchRaceData = async (driverId) => {
+    try {
+      const response = await axios.get(`https://ergast.com/api/f1/${year}/constructors/${driverId}/results.json`);
+      const races = response.data.MRData.RaceTable.Races;
+      const racePositions = races.map((race) => ({
+        raceName: race.raceName,
+        position: race.Results[0]?.position || "N/A",
+      }));
+      setRaceData(racePositions);
+    } catch (err) {
+      console.error("Failed to fetch race data:", err);
+    }
+  };
+
+
   const closeModal = () => {
     setSelectedConstructor(null);
   };
@@ -121,6 +147,7 @@ const Constructors = () => {
               <th className="p-5 text-left font-semibold">Car Image</th>
               <th className="p-5 text-left font-semibold">Nationality</th>
               <th className="p-5 text-left font-semibold">Points</th>
+              <th className="p-5 text-left font-semibold">Statistics</th>
             </tr>
           </thead>
           <tbody>
@@ -128,16 +155,18 @@ const Constructors = () => {
               <tr
                 key={index}
                 className={`${index % 2 === 0 ? "bg-gray-50" : "bg-white"} hover:bg-indigo-100`}
-                onClick={() => handleConstructorClick(constructor)}
               >
                 <td className="p-5 border-b flex justify-center">
                   <img
                     src={constructor.logo}
                     alt={`${constructor.name} logo`}
                     className="w-24 h-24 object-contain"
+                    onClick={() => handleConstructorClick(constructor)}
                   />
                 </td>
-                <td className="p-5 border-b font-medium text-lg">{constructor.name}</td>
+                <td className="p-5 border-b font-medium text-lg"
+                onClick={() => handleConstructorClick(constructor)}
+                >{constructor.name}</td>
                 <td className="p-5 border-b flex justify-center">
                   <img
                     src={constructor.carImage}
@@ -147,42 +176,18 @@ const Constructors = () => {
                 </td>
                 <td className="p-5 border-b text-center">{constructor.nationality}</td>
                 <td className="p-5 border-b text-center">{constructor.points}</td>
+                <td className="p-5 border-b text-center"><button
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                    onClick={() => handleDriverClick(constructor,"statistics")}
+                  >View Race Stats</button></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {selectedConstructor && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-          <div className="bg-white p-8 rounded-lg shadow-lg max-w-lg w-full relative">
-            <button
-              onClick={closeModal}
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800"
-            >
-              &times;
-            </button>
-
-            <div className="text-center mb-4">
-              <img src={selectedConstructor.logo} alt={`${selectedConstructor.name} logo`} className="w-24 h-24 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold mb-2">{selectedConstructor.name}</h2>
-              <p className="text-gray-600 mb-4">Nationality: {selectedConstructor.nationality}</p>
-              <p className="text-gray-600 mb-4">Points: {selectedConstructor.points}</p>
-            </div>
-
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Drivers</h3>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              {selectedConstructor.drivers?.map((driver, index) => (
-                <div key={index} className="text-center">
-                  <img src={driver.photo} alt={`${driver.givenName} ${driver.familyName}`} className="w-16 h-16 rounded-full mb-2" />
-                  <p className="font-medium">{driver.givenName} {driver.familyName}</p>
-                  <p className="text-gray-600">{driver.nationality}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {selectedConstructor && (comp !=="statistics") &&<ConstructorModal constructor={selectedConstructor} onClose={closeModal}/>}
+      {selectedConstructor && (comp ==="statistics") &&<RaceStatsModal raceData={raceData} onClose={closeModal} />}
     </div>
   );
 };
