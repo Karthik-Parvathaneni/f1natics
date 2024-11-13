@@ -51,6 +51,12 @@ const Constructors = () => {
             logoUrl = "https://media.formula1.com/image/upload/f_auto,c_limit,q_75,w_1320/content/dam/fom-website/2018-redesign-assets/team%20logos/haas";
           }
 
+          if (teamName === "alfa-romeo") {
+            logoUrl = "https://banner2.cleanpng.com/20180723/ioi/9a1a71ddc01a0bbb456a2420bb6e7c73.webp";
+            carImageUrl = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6sJOMc5mWTGSAmLZxEqMBC_G_v36RLfe7yQ&s";
+
+          }
+
           // Find points for the constructor from standings data
           const points = standingsData.find((standing) => standing.Constructor.constructorId === constructor.constructorId)?.points || "N/A";
 
