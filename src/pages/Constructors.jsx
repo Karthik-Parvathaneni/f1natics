@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import ConstructorModal from "../components/COnstructorModal";
+import ConstructorModal from "../components/ConstructorModal";
 import RaceStatsModal from "../components/RaceStatsModal";
 
 const Constructors = () => {
